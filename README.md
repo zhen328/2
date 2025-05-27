@@ -1,93 +1,89 @@
-# 基于朴素贝叶斯的中文邮件分类系统
+# **基于朴素贝叶斯的中文邮件分类系统**
 
-## 核心功能
+## **1. 系统介绍**  
+本系统是一个基于**朴素贝叶斯（Naive Bayes）算法**的中文邮件分类工具，主要用于自动区分**垃圾邮件（Spam）**和**正常邮件（Ham）**。系统通过对邮件内容进行文本分析，计算不同词汇在垃圾邮件和正常邮件中的概率分布，从而实现高效、准确的分类。  
 
-本系统实现了一个高效的中文邮件自动分类解决方案，能够准确区分垃圾邮件和普通邮件。系统采用多项式朴素贝叶斯作为核心分类算法，通过分析邮件文本内容中的词汇特征来进行智能判断。
+该系统适用于**企业邮箱过滤、个人邮件管理、反垃圾邮件引擎**等场景，能够有效减少垃圾邮件的干扰，提升邮件处理效率。  
 
-## 算法说明
+---
 
-系统采用多项式朴素贝叶斯分类器，该算法具有以下特点：
+## **2. 算法说明**  
+### **（1）朴素贝叶斯算法原理**  
+朴素贝叶斯是一种基于**贝叶斯定理**的分类方法，其核心假设是**特征之间相互独立**（即“朴素”的含义）。在邮件分类任务中，算法计算：  
 
-1. **特征独立性假设**：假设每个特征（单词）在给定类别条件下相互独立，这大大简化了概率计算过程。
-2. **概率计算机制**：通过计算单词在不同类别中出现的条件概率来进行分类预测。
-3. **多项式分布**：专门处理离散型特征（如词频），适合文本分类场景。
+- **先验概率（Prior Probability）**：  
+  - 垃圾邮件的概率 \( P(Spam) \)  
+  - 正常邮件的概率 \( P(Ham) \)  
 
-## 数据处理流程
+- **条件概率（Likelihood）**：  
+  - 给定某个词 \( w_i \)，它在垃圾邮件中出现的概率 \( P(w_i | Spam) \)  
+  - 在正常邮件中出现的概率 \( P(w_i | Ham) \)  
 
-### 1. 文本清洗
+- **后验概率（Posterior Probability）**：  
+  根据贝叶斯公式计算邮件属于某类的概率：  
+  \[
+  P(Spam | \text{邮件内容}) \propto P(Spam) \times \prod_{i} P(w_i | Spam)
+  \]
+  最终选择概率更高的类别作为分类结果。  
 
-系统首先对原始邮件文本进行深度清洗：
+### **（2）中文文本处理**  
+由于中文邮件涉及分词问题，系统采用以下流程：  
+1. **分词**：使用 **jieba** 等工具对邮件内容进行分词。  
+2. **停用词过滤**：去除“的”、“是”等无意义词汇。  
+3. **特征提取**：采用**词袋模型（Bag of Words, BoW）**或**TF-IDF** 进行特征表示。  
+4. **训练模型**：使用**多项式朴素贝叶斯（MultinomialNB）**进行分类训练。  
+
+---
+
+## **3. 系统功能**  
+### **（1）核心功能**  
+✔ **邮件分类**：自动判断邮件是**垃圾邮件（Spam）**还是**正常邮件（Ham）**。  
+✔ **训练与预测**：支持导入标注数据集训练模型，并用于新邮件的实时分类。  
+✔ **可扩展性**：可适配更多类别（如广告、诈骗、重要邮件等）。  
+
+### **（2）附加功能**  
+✔ **误报反馈**：用户可标记错误分类的邮件，优化模型。  
+✔ **可视化分析**：提供垃圾邮件关键词统计、分类准确率报告。  
+✔ **API 接口**：支持与企业邮箱系统（如 Outlook、Exchange）集成。  
+
+---
+
+## **4. 代码示例（Python）**  
 ```python
-# 使用正则表达式去除标点、数字等干扰字符
-line = re.sub(r'[.【】0-9、——。，！~\*]', '', line)
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
+import jieba
+
+# 示例数据
+emails = ["免费领取优惠券", "会议通知：明天下午3点开会", "赢取百万大奖"]
+labels = ["spam", "ham", "spam"]
+
+# 中文分词
+def chinese_tokenizer(text):
+    return " ".join(jieba.cut(text))
+
+# 特征提取（词袋模型）
+vectorizer = CountVectorizer(tokenizer=chinese_tokenizer)
+X = vectorizer.fit_transform(emails)
+
+# 训练朴素贝叶斯模型
+model = MultinomialNB()
+model.fit(X, labels)
+
+# 预测新邮件
+new_email = ["特价促销！限时抢购"]
+prediction = model.predict(vectorizer.transform(new_email))
+print(f"预测结果：{prediction[0]}")  # 输出：spam
 ```
 
-### 2. 中文分词处理
+---
 
-采用jieba分词工具进行精准的中文分词：
-```python
-# 执行分词并过滤无效词汇
-line = cut(line)  # jieba分词
-line = filter(lambda word: len(word) > 1, line)  # 过滤单字词
-```
+## **5. 总结**  
+本系统利用**朴素贝叶斯算法**结合**中文文本处理技术**，实现了高效的垃圾邮件过滤。其优势在于：  
+- **计算高效**：适合大规模邮件处理。  
+- **易于实现**：依赖较少的训练数据即可达到较好效果。  
+- **可解释性强**：可分析哪些关键词影响分类结果。  
 
-### 3. 样本平衡处理
+未来可结合**深度学习（如BERT）**进一步提升分类精度，适用于更复杂的邮件分类场景。  
 
-针对数据不平衡问题，系统集成了SMOTE过采样技术：
-```python
-# 使用SMOTE算法平衡样本分布
-from imblearn.over_sampling import SMOTE
-smote = SMOTE(random_state=42)
-vector_resampled, labels_resampled = smote.fit_resample(vector, labels)
-```
-
-## 特征工程
-
-### 高频词特征模式（默认）
-
-系统默认采用高频词特征提取方式：
-```python
-# 统计特征词出现频次构建特征向量
-word_map = list(map(lambda word: words.count(word), top_words))
-vector.append(word_map)
-```
-
-### TF-IDF特征模式（可选）
-
-也可切换至TF-IDF加权特征模式：
-```python
-# 使用TF-IDF加权构建特征向量
-from sklearn.feature_extraction.text import TfidfVectorizer
-vectorizer = TfidfVectorizer(vocabulary=top_words)
-vector = vectorizer.fit_transform([" ".join(words) for words in all_words])
-```
-
-## 模型评估体系
-
-系统建立了完善的评估机制：
-```python
-# 数据划分保持原始分布
-X_train, X_test, y_train, y_test = train_test_split(
-    vector, labels, test_size=0.2, random_state=42, stratify=labels)
-
-# 生成详细分类报告
-print(classification_report(y_test, y_pred, target_names=['普通邮件', '垃圾邮件']))
-```
-
-# 代码运行结果
-
-## 默认分类模式，对应代码classify.py
-<img src="images/nlp_classify.png" width="800" alt="classify">
-
-## 灵活切换方式
-### 局部切换 对应代码classify_local.py
-<img src="images/nlp_local.png" width="800" alt="local">
-
-### 局部切换 对应代码classify_global.py
-<img src="images/nlp_global.png" width="800" alt="global">
-
-## 样本平衡处理
-<img src="images/nlp_balance.png" width="800" alt="sample_balancing">
-
-## 最终版_添加全局方法选择/样本平衡处理/模型评估指标
-<img src="images/nlp_all.png" width="800" alt="classify_all">
+ **适用场景**：企业邮箱安全、个人邮件管理、自动化客服系统等。
